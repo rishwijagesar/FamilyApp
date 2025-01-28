@@ -2,6 +2,7 @@ package com.rishwi.familyapp.service;
 
 import com.rishwi.familyapp.model.Person;
 import com.rishwi.familyapp.repository.PersonRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Transactional
 public class PersonService implements IService<Person> {
 
     private final PersonRepository personRepository;
@@ -79,4 +81,6 @@ public class PersonService implements IService<Person> {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
+
+
 }

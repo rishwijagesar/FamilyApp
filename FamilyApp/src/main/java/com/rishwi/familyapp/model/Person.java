@@ -1,6 +1,7 @@
 package com.rishwi.familyapp.model;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,56 +11,47 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_EMPTY) // Skip empty or null fields
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.PropertyGenerator.class,
         property = "id"
 )
-
+@Getter
+@Setter
 @Entity
 @Table(name = "person")
 public class Person {
 
-    @Getter
-    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Getter
-    @Setter
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Getter
-    @Setter
     @Column(name = "birthDay", nullable = false)
     private Date birthDay;
 
-    @Getter
-    @Setter
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent1_id")
-    private Person parent1; // Parent1 is optional, nullable = true
+    private Person parent1;
 
-    @Getter
-    @Setter
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent2_id")
-    private Person parent2; // Parent2 is optional, nullable = true
+    private Person parent2;
 
-    @Getter
-    @Setter
-    @OneToMany(mappedBy = "parent1", cascade = CascadeType.PERSIST, orphanRemoval = true)
-    private List<Person> children1 = new ArrayList<>(); // Initialize to prevent NullPointerException
+    @OneToMany(mappedBy = "parent1", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Person> children1 = new ArrayList<>();
 
-    @Getter
-    @Setter
-    @OneToMany(mappedBy = "parent2", cascade = CascadeType.PERSIST, orphanRemoval = true)
-    private List<Person> children2 = new ArrayList<>(); // Initialize to prevent NullPointerException
+    @OneToMany(mappedBy = "parent2", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Person> children2 = new ArrayList<>();
 
-    @Getter
-    @Setter
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "partner_id")
-    private Person partner; // Partner is optional
+    private Person partner;
+
+    // by default any parent has a parent
+    @Column(name = "topParent", nullable = false, columnDefinition = "boolean default false")
+    private boolean topParent = false;
 }
+
