@@ -29,6 +29,11 @@ public class PersonController implements IController<Person> {
        return this.personService.findAll();
     }
 
+    @GetMapping("/persons/filtered")
+    public ResponseEntity<String> getAllFilteredEntities() {
+        return this.personService.filterdFindAll();
+    }
+
     @GetMapping("/persons/{id}")
     @Override
     public ResponseEntity<Person> getEntityById(long id) {
