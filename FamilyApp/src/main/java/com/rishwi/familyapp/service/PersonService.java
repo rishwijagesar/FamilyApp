@@ -21,14 +21,13 @@ import java.util.stream.Stream;
 public class PersonService implements IService<Person> {
 
     private final PersonRepository personRepository;
-    private final static int CHILDEREN_LIMIT = 3;
+    private final static int CHILDREN_LIMIT = 3;
     private final static int MAX_CHILD_AGE = 18;
 
     @Autowired
     public PersonService(PersonRepository personRepository) {
         this.personRepository = personRepository;
     }
-
 
     @Override
     public ResponseEntity<List<Person>> findAll() {
@@ -39,12 +38,12 @@ public class PersonService implements IService<Person> {
         }
     }
 
-    // filtered findAll Method
-    public ResponseEntity<String> filterdFindAll(){
+    // filtered findAll Method for persons with partners with 3 children
+    public ResponseEntity<String> filterdFindAll() {
         try {
             List<Person> filteredPersons = personRepository.findAll().stream()
                     .filter(person -> person.getPartner() != null
-                            && getTotalChildrenCount(person) == CHILDEREN_LIMIT)
+                            && getTotalChildrenCount(person) == CHILDREN_LIMIT)
                     .toList();
 
             return ResponseEntity.ok(csvConverter(filteredPersons));
@@ -53,45 +52,24 @@ public class PersonService implements IService<Person> {
         }
     }
 
-    // Count direct children from children1 and children2
-    private int getTotalChildrenCount(Person person) {
-        List<Person> allChildren = Stream.of(person.getChildren1(), person.getChildren2())
-                .filter(Objects::nonNull) // Ensure non-null lists
-                .flatMap(List::stream) // Flatten both lists into a single stream
-                .filter(Objects::nonNull) // Ensure non-null child objects
-                .toList();
-
-        long countBelow18 = allChildren.stream()
-                .filter(child -> calculateAge(child.getBirthDay()) < MAX_CHILD_AGE) // Count only children below 18
-                .count();
-
-        return (int) countBelow18;
-    }
-
-
-    // calculate age from given DateStamp till now
-    private int calculateAge(Date birthDate) {
-        return Period.between(birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalDate.now()).getYears();
-    }
-
-    // Convert the filtered list to CSV format
-    private String csvConverter(List<Person> filteredPersons){
-        StringWriter csvWriter = new StringWriter();
-        csvWriter.append("ID,Name,Partner,Child1,Child2,Child3\n");
-        for (Person person : filteredPersons) {
-            String childrenNames = person.getChildren1().stream()
-                    .map(Person::getName)
-                    .collect(Collectors.joining(", "));
-            csvWriter.append(String.format("%d,%s,%s,%s\n",
-                    person.getId(),
-                    person.getName(),
-                    person.getPartner().getName(),
-                    childrenNames
-            ));
+    public ResponseEntity<List<Person>> filterAllOnId(){
+        try{
+            List<Person> filteredPersons = personRepository.findAll();
+            filteredPersons.sort(Comparator.comparing(Person::getId));
+            return new ResponseEntity<>(new ArrayList<>(filteredPersons), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
 
-        // Encode the CSV to Base64
-       return Base64.getEncoder().encodeToString(csvWriter.toString().getBytes());
+    public ResponseEntity<List<Person>> filterAllOnName(){
+        try{
+            List<Person> filteredPersons = personRepository.findAll();
+            filteredPersons.sort(Comparator.comparing(Person::getName));
+            return new ResponseEntity<>(new ArrayList<>(filteredPersons), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Override
@@ -144,5 +122,43 @@ public class PersonService implements IService<Person> {
         }
     }
 
+    // Count direct children from children1 and children2
+    private int getTotalChildrenCount(Person person) {
+        List<Person> allChildren = Stream.of(person.getChildren1(), person.getChildren2())
+                .filter(Objects::nonNull) // Ensure non-null lists
+                .flatMap(List::stream) // Flatten both lists into a single stream
+                .filter(Objects::nonNull) // Ensure non-null child objects
+                .toList();
 
+        long countBelow18 = allChildren.stream()
+                .filter(child -> calculateAge(child.getBirthDay()) < MAX_CHILD_AGE) // Count only children below 18
+                .count();
+
+        return (int) countBelow18;
+    }
+
+    // calculate age from given DateStamp till now
+    private int calculateAge(Date birthDate) {
+        return Period.between(birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalDate.now()).getYears();
+    }
+
+    // Convert the filtered list to CSV format
+    private String csvConverter(List<Person> filteredPersons){
+        StringWriter csvWriter = new StringWriter();
+        csvWriter.append("ID,Name,Partner,Child1,Child2,Child3\n");
+        for (Person person : filteredPersons) {
+            String childrenNames = person.getChildren1().stream()
+                    .map(Person::getName)
+                    .collect(Collectors.joining(", "));
+            csvWriter.append(String.format("%d,%s,%s,%s\n",
+                    person.getId(),
+                    person.getName(),
+                    person.getPartner().getName(),
+                    childrenNames
+            ));
+        }
+
+        // Encode the CSV to Base64
+        return Base64.getEncoder().encodeToString(csvWriter.toString().getBytes());
+    }
 }
